@@ -256,6 +256,15 @@ class CurrentLocationVC: UIViewController, CLLocationManagerDelegate {
             getButton.setTitle("Get My Location", for: .normal)
         }
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "LocationDetailsVC"{
+            let navigationVC = segue.destination as! UINavigationController
+            let vc = navigationVC.topViewController as! LocationDetailsVC
+            vc.coordinate = location!.coordinate
+            vc.placemark = placemark
+        }
+    }
 
 
 }
