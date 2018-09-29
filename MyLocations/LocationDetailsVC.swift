@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreLocation
+import Dispatch
 
 private let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -28,6 +29,8 @@ class LocationDetailsVC: UITableViewController {
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
     
+    var categoryName = "No Category"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -43,6 +46,23 @@ class LocationDetailsVC: UITableViewController {
         }
         
         dateLabel.text = format(date: Date())
+        categoryLabel.text = categoryName
+        
+        // Hiding the keybaord
+        let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
+        gestureRecognizer.cancelsTouchesInView = false // When keyboard is active and you tap on a button, button still works while keyboard is disappearing
+        tableView.addGestureRecognizer(gestureRecognizer)
+    }
+    
+    @objc func hideKeyboard(_ gestureRecognizer: UIGestureRecognizer){
+        let point = gestureRecognizer.location(in: tableView)
+        let indexPath = tableView.indexPathForRow(at: point)
+        
+        if indexPath != nil && indexPath!.section == 0 && indexPath!.row == 0{ // Don't hide the keyboard if user taps on the textview
+            return
+        }
+        
+        descriptionTextView.resignFirstResponder()
     }
     
     func string(from placemark: CLPlacemark) ->String{
@@ -88,5 +108,44 @@ class LocationDetailsVC: UITableViewController {
             return 44
         }
     }
+    
+    override func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        return indexPath.section <= 1 ? indexPath : nil
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if indexPath.section == 0 && indexPath.row == 0{
+            descriptionTextView.becomeFirstResponder()
+        }
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "CategoryPickerVC"{
+            let vc = segue.destination as! CategoryPickerVC
+            vc.selectedCategoryName = categoryName
+        }
+    }
+    
+    @IBAction func categoryPickerDidPickCategory(_ segue: UIStoryboardSegue){
+        let controller = segue.source as! CategoryPickerVC
+        categoryName = controller.selectedCategoryName
+        categoryLabel.text = categoryName
+    }
+    
+    @IBAction func doneTapped(_ sender: Any) {
+        let hudView = HudView.hud(inView: navigationController!.view, animated: true)
+        hudView.text = "Tagged"
+        
+        let delaySeconds = 0.6
+        DispatchQueue.main.asyncAfter(deadline: .now() + delaySeconds) {
+            self.dismiss(animated: true, completion: nil)
+        }
+    }
+    
+    @IBAction func cancelTapped(_ sender: Any) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    
 
 }
